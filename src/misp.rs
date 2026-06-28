@@ -3,10 +3,13 @@ use std::net::Ipv4Addr;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
+use crate::qihse::QihseClient;
 
 pub async fn run_misp_sidecar(tx: mpsc::Sender<u32>) -> Result<()> {
     println!("[MISP] Sidecar activated. Connecting to MISP instance at https://localhost:8443...");
     
+    let db = QihseClient::new("qihse://localhost:9090");
+
     // Wait for EDR to fully initialize
     sleep(Duration::from_secs(2)).await;
     
@@ -24,7 +27,13 @@ pub async fn run_misp_sidecar(tx: mpsc::Sender<u32>) -> Result<()> {
             break Ok(()); 
         }
         
+        db.insert_threat_intel("IP_DST", "198.51.100.77", "MISP_REST_API").unwrap_or_default();
         println!("[MISP] Downloaded new Threat Intel IOC: 198.51.100.77. Forwarding to XDP blocklist.");
+        
+        // Mocking a newly discovered YARA rule payload
+        let yara_rule_name = "APT29.CozyBear.Linux";
+        db.insert_threat_intel("YARA_RULE", yara_rule_name, "MISP_REST_API").unwrap_or_default();
+        println!("[MISP] Downloaded new YARA Rule: {}. Logged to QIHSE and queued for Memory Scanner.", yara_rule_name);
         
         // Sleep for standard polling interval (e.g., 5 minutes)
         sleep(Duration::from_secs(300)).await;

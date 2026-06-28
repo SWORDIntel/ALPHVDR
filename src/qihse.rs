@@ -83,4 +83,11 @@ impl QihseClient {
         file.write_all(wal_entry.as_bytes())?;
         Ok(())
     }
+
+    pub fn insert_threat_intel(&self, indicator_type: &str, value: &str, source: &str) -> Result<()> {
+        let wal_entry = format!("VEC:[THREAT_INTEL] | TYPE:{} VALUE:{} SOURCE:{}\n", indicator_type, value, source);
+        let mut file = OpenOptions::new().create(true).append(true).open(&self.wal_path)?;
+        file.write_all(wal_entry.as_bytes())?;
+        Ok(())
+    }
 }
