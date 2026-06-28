@@ -1,0 +1,34 @@
+[Unit]
+Description=ALPHVDR Endpoint Detection and Response Engine
+After=network.target zfs.target
+Wants=zfs.target
+
+[Service]
+Type=simple
+# Ensure we run as root as eBPF and ZFS operations require it
+User=root
+Group=root
+
+# The path to the compiled ALPHVDR binary
+ExecStart=/home/john/Documents/ALPHVDR/defensive/target/debug/alphvdr-agent
+
+# Restart configuration
+Restart=always
+RestartSec=5
+
+# Hardening / Sandboxing
+# We need CAP_SYS_ADMIN and CAP_BPF for eBPF, and CAP_SYS_PTRACE for freeze signals.
+# We also need CAP_DAC_OVERRIDE to access /proc/[pid]/mem
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_BPF CAP_SYS_PTRACE CAP_DAC_OVERRIDE CAP_NET_ADMIN CAP_SYS_RESOURCE
+NoNewPrivileges=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alphvdr
+
+[Install]
+WantedBy=multi-user.target
