@@ -5,8 +5,9 @@ ALPHVDR is a next-generation, kernel-level Endpoint Detection and Response (EDR)
 ## Core Features
 
 - **eBPF Kernel Telemetry & Behavioral Tripwires**:
-  - Monitors `execve`, `ptrace`, and `process_vm_readv` syscalls directly in the kernel ring buffer.
-  - Automatically freezes (`SIGSTOP`) malicious processes that attempt privilege escalation or container escapes (e.g., unauthorized `podman` execution).
+  - Monitors `execve`, `ptrace`, `openat`, and `sendto` syscalls directly in the kernel ring buffer.
+  - Automatically freezes (`SIGSTOP`) malicious processes that attempt privilege escalation, container escapes (e.g., unauthorized `podman` execution), or Denial of Service attacks.
+  - **Anti-DoS**: Aggressive LRU hash map tracking stops Inode Exhaustion (rapid file creation spam) and Journald Exhaustion (syslog/UNIX socket datagram spam) in their tracks.
   - Deception traps (Honeytokens) deployed in `~/.aws/`, `~/.kube/`, and `/dev/mei0` to catch credential scrapers and firmware flashers.
 - **Dynamic Memory Carving & KP14-SUITE**:
   - Hooks memory regions via `/proc/[pid]/maps` and extracts raw Virtual Memory Areas (VMAs) upon detecting a threat.
@@ -23,23 +24,19 @@ ALPHVDR is a next-generation, kernel-level Endpoint Detection and Response (EDR)
 - **QIHSE Telemetry Logging**:
   - Emits all EDR actions, YARA matches, and network telemetry to a high-performance WAL (Write-Ahead Log) for SOC ingestion.
 
-## Installation & Compilation
-
-```bash
-cargo build --release
-```
-
-## Usage
+## Installation & Deployment
 
 ALPHVDR requires root privileges to attach eBPF probes and utilize kernel features.
 
+We provide a covert installer that compiles the agent and deploys it as a stealthy, unassuming systemd service (`sys-thermald.service`) to hide in plain sight from attackers.
+
 ```bash
-sudo cargo run
+sudo ./install.sh
 ```
 
 ### Advanced Modes
 
-- `--kp14-daemon`: Boots ALPHVDR into the headless KP14 VM Daemon mode, automatically mounting hotplugged storage, parsing proprietary core dump blobs, and orchestrating reverse-engineering triage.
+- **Advanced KP14 Daemon**: Runs seamlessly in the background by default to automatically mount hotplugged storage, parse proprietary core dump blobs, and orchestrate reverse-engineering triage.
 - `--kp14-remote <host>`: Connects to a remote KP14 analysis instance over SSH.
 - `--yara-raw <file>`: Runs the raw YARA byte scanner against a static file on disk rather than active memory.
 
