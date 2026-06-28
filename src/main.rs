@@ -395,6 +395,24 @@ async fn main() -> Result<()> {
                 }
             }
             
+            // DoS Tripwire: Inode Exhaustion
+            if filename == "INODE_EXHAUSTION_TRAP" {
+                println!("[BEHAVIORAL] 🚨 INODE EXHAUSTION DETECTED! Process '{}' (PID: {}) is spamming file creations! Kernel auto-froze it.", comm, event.pid);
+                let _ = db.insert_edr_action("SIGSTOP", &format!("PID:{}", event.pid), "INODE_EXHAUSTION_TRAP");
+                if let Err(e) = tx_exec.try_send(event.pid) {
+                    eprintln!("[RESPONDER] Failed to dispatch carve order for PID {}: {}", event.pid, e);
+                }
+            }
+            
+            // DoS Tripwire: Journald Exhaustion
+            if filename == "JOURNALD_EXHAUSTION_TRAP" {
+                println!("[BEHAVIORAL] 🚨 JOURNALD SPAM DETECTED! Process '{}' (PID: {}) is spamming socket writes! Kernel auto-froze it.", comm, event.pid);
+                let _ = db.insert_edr_action("SIGSTOP", &format!("PID:{}", event.pid), "JOURNALD_EXHAUSTION_TRAP");
+                if let Err(e) = tx_exec.try_send(event.pid) {
+                    eprintln!("[RESPONDER] Failed to dispatch carve order for PID {}: {}", event.pid, e);
+                }
+            }
+            
             // YARA Memory Scanning Trigger
             if let Ok(Some((sig_name, region))) = yara_engine.scan_process_memory(event.pid) {
                 println!("[YARA] 🚨 IN-MEMORY SIGNATURE MATCH ({})! Freezing PID {}", sig_name, event.pid);

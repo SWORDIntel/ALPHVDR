@@ -46,6 +46,20 @@ struct {
     __type(value, __u32); // Agent PID
 } agent_pid SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, 10240);
+    __type(key, __u32);   // PID
+    __type(value, __u64); // Count of file creations
+} file_creation_counts SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, 10240);
+    __type(key, __u32);   // PID
+    __type(value, __u64); // Count of syslog/journal socket sends
+} journal_spam_counts SEC(".maps");
+
 SEC("tp/syscalls/sys_enter_execve")
 int handle_execve(struct trace_event_raw_sys_enter *ctx) {
     struct event *e;
@@ -301,4 +315,76 @@ int xdp_c2_inspector(struct xdp_md *ctx) {
     }
     
     return XDP_PASS;
+}
+
+SEC("tp/syscalls/sys_enter_openat")
+int handle_openat(struct trace_event_raw_sys_enter *ctx) {
+    int flags = ctx->args[2];
+    if (flags & 00000100) { // O_CREAT
+        __u32 pid = bpf_get_current_pid_tgid() >> 32;
+        
+        // Skip tracking the EDR agent itself to prevent self-freezing
+        __u32 key = 0;
+        __u32 *my_pid = bpf_map_lookup_elem(&agent_pid, &key);
+        if (my_pid && *my_pid == pid) return 0;
+
+        __u64 *count = bpf_map_lookup_elem(&file_creation_counts, &pid);
+        __u64 new_count = 1;
+        if (count) {
+            new_count = *count + 1;
+        }
+        bpf_map_update_elem(&file_creation_counts, &pid, &new_count, BPF_ANY);
+        
+        // If a single process creates > 10,000 files, it's an Inode Exhaustion Attack
+        if (new_count > 10000) {
+            bpf_send_signal(19); // SIGSTOP
+            struct event *e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
+            if (e) {
+                e->pid = pid;
+                e->ppid = -5;
+                e->uid = bpf_get_current_uid_gid();
+                bpf_get_current_comm(&e->comm, sizeof(e->comm));
+                const char msg[] = "INODE_EXHAUSTION_TRAP";
+                __builtin_memcpy(e->filename, msg, sizeof(msg));
+                bpf_ringbuf_submit(e, 0);
+            }
+            new_count = 0; // Reset to avoid spamming ringbuf
+            bpf_map_update_elem(&file_creation_counts, &pid, &new_count, BPF_ANY);
+        }
+    }
+    return 0;
+}
+
+SEC("tp/syscalls/sys_enter_sendto")
+int handle_sendto(struct trace_event_raw_sys_enter *ctx) {
+    __u32 pid = bpf_get_current_pid_tgid() >> 32;
+    
+    __u32 key = 0;
+    __u32 *my_pid = bpf_map_lookup_elem(&agent_pid, &key);
+    if (my_pid && *my_pid == pid) return 0;
+
+    __u64 *count = bpf_map_lookup_elem(&journal_spam_counts, &pid);
+    __u64 new_count = 1;
+    if (count) {
+        new_count = *count + 1;
+    }
+    bpf_map_update_elem(&journal_spam_counts, &pid, &new_count, BPF_ANY);
+    
+    // If a single process sends > 50,000 datagrams rapidly, freeze it
+    if (new_count > 50000) {
+        bpf_send_signal(19); // SIGSTOP
+        struct event *e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
+        if (e) {
+            e->pid = pid;
+            e->ppid = -6;
+            e->uid = bpf_get_current_uid_gid();
+            bpf_get_current_comm(&e->comm, sizeof(e->comm));
+            const char msg[] = "JOURNALD_EXHAUSTION_TRAP";
+            __builtin_memcpy(e->filename, msg, sizeof(msg));
+            bpf_ringbuf_submit(e, 0);
+        }
+        new_count = 0; 
+        bpf_map_update_elem(&journal_spam_counts, &pid, &new_count, BPF_ANY);
+    }
+    return 0;
 }
