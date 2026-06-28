@@ -80,12 +80,7 @@ fn handle_tls_event(data: &[u8]) -> i32 {
 async fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
-        if args[1] == "--kp14-daemon" {
-            println!("Starting KP14-SUITE local daemon mode...");
-            let kp14 = kp14_suite::Kp14Client::new();
-            let _ = kp14.run_daemon_pipeline(3600)?;
-            return Ok(());
-        } else if args[1] == "--kp14-remote" && args.len() > 2 {
+        if args[1] == "--kp14-remote" && args.len() > 2 {
             println!("Starting KP14-SUITE remote SSH mode...");
             let kp14 = kp14_suite::Kp14Client::with_ssh_host(&args[2]);
             // Just test connectivity by listing block devices
@@ -102,6 +97,15 @@ async fn main() -> Result<()> {
     }
 
     println!("[ALPHVDR] Initializing Advanced Threat Detection Engine...");
+    
+    // Spawn Advanced KP14 Daemon mode by default in the background
+    tokio::task::spawn_blocking(|| {
+        println!("[KP14] Advanced VM Daemon Mode Active (Background).");
+        let kp14 = kp14_suite::Kp14Client::new();
+        if let Err(e) = kp14.run_daemon_pipeline(3600) {
+            eprintln!("[KP14] Daemon pipeline encountered an error: {}", e);
+        }
+    });
 
     // Setup the Async Responder Engine channel
     let (tx, mut rx) = mpsc::channel::<i32>(1000);
