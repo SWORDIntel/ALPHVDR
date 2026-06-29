@@ -9,6 +9,8 @@ libbpf-rs = "0.24"
 tokio = { version = "1.37", features = ["full"] }
 anyhow = "1.0"
 libc = "0.2"
+serde_json = "1.0.150"
+serde = { version = "1.0.228", features = ["derive"] }
 
 [build-dependencies]
 libbpf-cargo = "0.24"
