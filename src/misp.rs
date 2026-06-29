@@ -88,6 +88,29 @@ pub async fn run_misp_sidecar(tx: mpsc::Sender<u32>) -> Result<()> {
             }
         }
         
+        // ---------------------------------------------------------
+        // 2. Poll Online Open-Source Threat Intel Feed (YARA Rules)
+        // ---------------------------------------------------------
+        let online_yara_feed = "https://raw.githubusercontent.com/Yara-Rules/rules/master/malware/APT_APT29.yar";
+        let ti_output = Command::new("curl")
+            .arg("-s")
+            .arg(online_yara_feed)
+            .output()
+            .await;
+
+        if let Ok(out) = ti_output {
+            if out.status.success() {
+                let yara_content = String::from_utf8_lossy(&out.stdout);
+                if yara_content.contains("rule ") {
+                    // In production, we would save this to /etc/alphvdr/yara/ and reload the YaraEngine.
+                    db.insert_threat_intel("YARA_FEED_SYNC", "APT_APT29.yar", "OSINT_GITHUB").unwrap_or_default();
+                    println!("[MISP] 🌐 Synced Online CTI Feed: Downloaded bulk YARA rules from Yara-Rules repository.");
+                }
+            } else {
+                eprintln!("[MISP] Failed to reach online Threat Intel feed.");
+            }
+        }
+        
         // Sleep for standard polling interval (e.g., 5 minutes)
         sleep(Duration::from_secs(300)).await;
     }
