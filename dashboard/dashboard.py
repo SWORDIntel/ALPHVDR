@@ -29,6 +29,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     # Listen on all LAN interfaces
-    server = HTTPServer(('0.0.0.0', 8080), DashboardHandler)
-    print("[*] ALPHVDR LAN Dashboard running on http://0.0.0.0:8080")
+    server = HTTPServer(('0.0.0.0', 31337), DashboardHandler)
+    print("[*] ALPHVDR LAN Dashboard running on http://0.0.0.0:31337")
     server.serve_forever()

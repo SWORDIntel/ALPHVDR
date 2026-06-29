@@ -7,18 +7,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0a0b10;
-            --glass-bg: rgba(20, 22, 35, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --accent-red: #ff3366;
-            --accent-cyan: #00f2fe;
+            --bg-dark: #000000;
+            --glass-bg: rgba(10, 0, 0, 0.65);
+            --glass-border: rgba(255, 0, 0, 0.15);
+            --accent-red: #ff0033;
+            --accent-red-glow: rgba(255, 0, 51, 0.6);
+            --accent-dark-red: #8b0000;
             --text-main: #e2e8f0;
             --text-muted: #94a3b8;
         }
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1a0b1c, var(--bg-dark));
+            background-color: var(--bg-dark);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -42,16 +43,15 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--glass-border);
-            background: rgba(10, 11, 16, 0.8);
+            background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(12px);
         }
         h1 {
             font-family: 'Outfit', sans-serif;
             margin: 0;
             font-size: 2rem;
-            background: linear-gradient(90deg, var(--accent-red), var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-red);
+            text-shadow: 0 0 10px var(--accent-red-glow);
             letter-spacing: 2px;
         }
         .status-badge {
@@ -59,24 +59,24 @@
             align-items: center;
             gap: 8px;
             padding: 8px 16px;
-            background: rgba(0, 242, 254, 0.1);
-            border: 1px solid rgba(0, 242, 254, 0.2);
+            background: rgba(255, 0, 51, 0.1);
+            border: 1px solid rgba(255, 0, 51, 0.3);
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--accent-cyan);
+            color: var(--accent-red);
             animation: pulse 2s infinite;
         }
         .status-dot {
             width: 8px; height: 8px;
-            background: var(--accent-cyan);
+            background: var(--accent-red);
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-red);
         }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 242, 254, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 51, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 51, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 51, 0); }
         }
         .container {
             flex: 1;
@@ -120,21 +120,21 @@
         .event-item {
             padding: 1rem;
             margin-bottom: 1rem;
-            background: rgba(0,0,0,0.3);
-            border-left: 4px solid var(--accent-cyan);
+            background: rgba(20, 0, 0, 0.4);
+            border-left: 4px solid var(--accent-dark-red);
             border-radius: 4px 8px 8px 4px;
             font-family: monospace;
             font-size: 0.95rem;
             word-break: break-all;
             animation: slideIn 0.3s ease-out;
-            transition: background 0.2s;
+            transition: background 0.2s, border-color 0.2s;
         }
         .event-item:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(40, 0, 0, 0.6);
         }
         .event-item.threat {
             border-left-color: var(--accent-red);
-            background: linear-gradient(90deg, rgba(255, 51, 102, 0.1), transparent);
+            background: linear-gradient(90deg, rgba(255, 0, 51, 0.15), transparent);
         }
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(-10px); }
