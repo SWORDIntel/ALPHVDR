@@ -24,7 +24,35 @@ ALPHVDR is a next-generation, kernel-level Endpoint Detection and Response (EDR)
 - **QIHSE Telemetry Logging**:
   - Emits all EDR actions, YARA matches, and network telemetry to a high-performance WAL (Write-Ahead Log) for SOC ingestion.
 
-## Installation & Deployment
+## 🌐 Online Threat Intelligence & MISP Sync
+
+ALPHVDR includes a native `misp.rs` sidecar daemon that runs continuously to ensure your defenses are armed with the latest open-source threat intelligence.
+
+1. **Live MISP Telemetry**: It queries your local MISP node (`https://localhost:8443`) for high-confidence `ip-dst` records and blocklists them immediately at the kernel XDP layer.
+2. **Open-Source YARA Feeds**: The sidecar actively pulls public bulk YARA datasets from GitHub (`Yara-Rules`) and logs them into the QIHSE engine, updating the memory scanner signatures on the fly.
+
+## 📊 AMOLED Command & Control Dashboard
+
+To visually monitor and control your endpoint telemetry, ALPHVDR ships with a dynamic, dependency-free Python web dashboard accessible over your local area network (LAN).
+
+- **Stealth Port**: Listens on `http://0.0.0.0:31337`.
+- **Aesthetic UI**: Deep AMOLED black (`#000000`) background with glowing blood-red accents and glassmorphism.
+- **Live QIHSE WAL Stream**: Automatically tails the `/tmp/alphvdr/qihse_events.wal` file to instantly display system traps, eBPF telemetry, and downloaded YARA rules.
+- **Active Controls**: Includes a Command & Control (C2) panel to directly issue `EDR_ACTION` commands:
+  - `Flush XDP Blocklist`
+  - `Reload YARA Rules`
+  - `Toggle KP14 Sandbox`
+  - `Emergency Network Isolate`
+
+To spin up the dashboard:
+```bash
+cd dashboard
+python3 dashboard.py
+```
+
+---
+
+## 🏗 Installation & Deployment
 
 ALPHVDR requires root privileges to attach eBPF probes and utilize kernel features.
 

@@ -105,7 +105,34 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            color: var(--text-main);
         }
+        
+        /* Buttons */
+        .ctrl-btn {
+            background: rgba(255, 0, 51, 0.1);
+            border: 1px solid rgba(255, 0, 51, 0.4);
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .ctrl-btn:hover {
+            background: var(--accent-red);
+            box-shadow: 0 0 15px var(--accent-red-glow);
+            border-color: var(--accent-red);
+            transform: translateY(-1px);
+        }
+        .ctrl-btn:active {
+            transform: translateY(1px);
+        }
+
         .event-list {
             list-style: none;
             padding: 0;
@@ -152,6 +179,20 @@
     </header>
     
     <div class="container">
+        <!-- Command & Control Panel -->
+        <div class="panel" style="margin-bottom: -1rem;">
+            <div class="panel-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Active Response Controls
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button onclick="sendCommand('FLUSH_XDP_BLOCKLIST')" class="ctrl-btn">Flush XDP Blocklist</button>
+                <button onclick="sendCommand('RELOAD_YARA_RULES')" class="ctrl-btn">Reload YARA Rules</button>
+                <button onclick="sendCommand('TOGGLE_KP14_MODE')" class="ctrl-btn">Toggle KP14 Sandbox</button>
+                <button onclick="sendCommand('ISOLATE_NETWORK')" class="ctrl-btn" style="background: rgba(139,0,0,0.4); border-color: #ff0000;">Emergency Network Isolate</button>
+            </div>
+        </div>
+
         <div class="panel">
             <div class="panel-header">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -190,6 +231,26 @@
                 });
             } catch (error) {
                 console.error("Failed to fetch events:", error);
+            }
+        }
+
+        async function sendCommand(action) {
+            try {
+                const res = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                if (res.ok) {
+                    console.log(`Action ${action} executed successfully.`);
+                    // Force an immediate UI refresh to show the manual action
+                    fetchEvents();
+                } else {
+                    alert(`Failed to execute ${action}`);
+                }
+            } catch (err) {
+                console.error(err);
+                alert(`Error executing ${action}`);
             }
         }
 

@@ -1,6 +1,7 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import os
+from datetime import datetime
 
 class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -23,6 +24,32 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         events.append(line.strip())
             # Return last 100 events reversed (newest first)
             self.wfile.write(json.dumps(events[-100:][::-1]).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        if self.path == '/api/control':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                data = json.loads(post_data)
+                action = data.get('action', 'UNKNOWN_ACTION')
+                
+                wal_path = '/tmp/alphvdr/qihse_events.wal'
+                with open(wal_path, 'a') as f:
+                    f.write(f"[{datetime.now().isoformat()}] [QIHSE] [EDR_ACTION] MANUAL_CONTROL_TRIGGERED: {action}\n")
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "success", "action": action}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
         else:
             self.send_response(404)
             self.end_headers()
